@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>2D-spel med 20 nivåer</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    canvas {
+      background: #222;
+      border: 3px solid white;
+      margin-top: 20px;
+    }
+
+    p {
+      font-size: 18px;
+    }
+
+    a {
+      color: white;
+    }
+
+    #meddelande {
+      font-size: 22px;
+      color: yellow;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>2D-spel med 20 nivåer</h1>
+
+  <p>
+    A = vänster |
+    D = höger |
+    Space = hoppa
+  </p>
+
+  <p>Nivå: <span id="nivaText">1</span> / 20</p>
+
+  <canvas id="spel" width="700" height="400"></canvas>
+
+  <p id="meddelande"></p>
+
+  <br>
+
+  <a href="index.html">Tillbaka hem</a>
+
+  <script>
+    const canvas = document.getElementById("spel");
+    const ctx = canvas.getContext("2d");
+
+    const gravitation = 0.6;
+    const markY = 350;
+
+    let aktuellNiva = 0;
+    let tangenter = {};
+
+    let spelare = {
+      x: 50,
+      y: 300,
+      bredd: 30,
+      hojd: 30,
+      hastighet: 5,
+      yHastighet: 0,
+      hoppStyrka: 13,
+      paMarken: false
+    };
+
+    const nivaer = [
+      {
+        namn: "Nivå 1",
+        spikar: [
+          { x: 300, y: markY - 20, bredd: 40, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 2",
+        spikar: [
+          { x: 220, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 420, y: markY - 20, bredd: 40, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 3",
+        spikar: [
+          { x: 180, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 340, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 500, y: markY - 20, bredd: 40, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 4",
+        spikar: [
+          { x: 140, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 260, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 380, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 500, y: markY - 20, bredd: 35, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 5",
+        spikar: [
+          { x: 120, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 220, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 320, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 420, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 520, y: markY - 20, bredd: 35, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 6",
+        spikar: [
+          { x: 160, y: markY - 20, bredd: 50, hojd: 20 },
+          { x: 300, y: markY - 20, bredd: 50, hojd: 20 },
+          { x: 440, y: markY - 20, bredd: 50, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 7",
+        spikar: [
+          { x: 100, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 200, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 300, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 400, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 500, y: markY - 20, bredd: 40, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 8",
+        spikar: [
+          { x: 130, y: markY - 20, bredd: 60, hojd: 20 },
+          { x: 280, y: markY - 20, bredd: 60, hojd: 20 },
+          { x: 430, y: markY - 20, bredd: 60, hojd: 20 },
+          { x: 560, y: markY - 20, bredd: 35, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 9",
+        spikar: [
+          { x: 100, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 180, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 260, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 340, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 420, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 500, y: markY - 20, bredd: 35, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 10",
+        spikar: [
+          { x: 120, y: markY - 20, bredd: 55, hojd: 20 },
+          { x: 240, y: markY - 20, bredd: 55, hojd: 20 },
+          { x: 360, y: markY - 20, bredd: 55, hojd: 20 },
+          { x: 480, y: markY - 20, bredd: 55, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 11",
+        spikar: [
+          { x: 90, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 160, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 230, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 300, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 370, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 440, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 510, y: markY - 20, bredd: 35, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 12",
+        spikar: [
+          { x: 130, y: markY - 20, bredd: 80, hojd: 20 },
+          { x: 300, y: markY - 20, bredd: 80, hojd: 20 },
+          { x: 470, y: markY - 20, bredd: 80, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 13",
+        spikar: [
+          { x: 100, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 170, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 260, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 330, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 420, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 490, y: markY - 20, bredd: 40, hojd: 20 },
+          { x: 560, y: markY - 20, bredd: 30, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 14",
+        spikar: [
+          { x: 110, y: markY - 20, bredd: 70, hojd: 20 },
+          { x: 230, y: markY - 20, bredd: 70, hojd: 20 },
+          { x: 350, y: markY - 20, bredd: 70, hojd: 20 },
+          { x: 470, y: markY - 20, bredd: 70, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 15",
+        spikar: [
+          { x: 90, y: markY - 20, bredd: 30, hojd: 20 },
+          { x: 150, y: markY - 20, bredd: 30, hojd: 20 },
+          { x: 210, y: markY - 20, bredd: 30, hojd: 20 },
+          { x: 270, y: markY - 20, bredd: 30, hojd: 20 },
+          { x: 330, y: markY - 20, bredd: 30, hojd: 20 },
+          { x: 390, y: markY - 20, bredd: 30, hojd: 20 },
+          { x: 450, y: markY - 20, bredd: 30, hojd: 20 },
+          { x: 510, y: markY - 20, bredd: 30, hojd: 20 },
+          { x: 570, y: markY - 20, bredd: 25, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 16",
+        spikar: [
+          { x: 120, y: markY - 20, bredd: 90, hojd: 20 },
+          { x: 280, y: markY - 20, bredd: 90, hojd: 20 },
+          { x: 440, y: markY - 20, bredd: 90, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 17",
+        spikar: [
+          { x: 90, y: markY - 20, bredd: 50, hojd: 20 },
+          { x: 180, y: markY - 20, bredd: 50, hojd: 20 },
+          { x: 270, y: markY - 20, bredd: 50, hojd: 20 },
+          { x: 360, y: markY - 20, bredd: 50, hojd: 20 },
+          { x: 450, y: markY - 20, bredd: 50, hojd: 20 },
+          { x: 540, y: markY - 20, bredd: 45, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 18",
+        spikar: [
+          { x: 100, y: markY - 20, bredd: 80, hojd: 20 },
+          { x: 220, y: markY - 20, bredd: 80, hojd: 20 },
+          { x: 340, y: markY - 20, bredd: 80, hojd: 20 },
+          { x: 460, y: markY - 20, bredd: 80, hojd: 20 },
+          { x: 570, y: markY - 20, bredd: 25, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 19",
+        spikar: [
+          { x: 85, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 140, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 195, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 250, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 305, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 360, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 415, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 470, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 525, y: markY - 20, bredd: 35, hojd: 20 },
+          { x: 580, y: markY - 20, bredd: 20, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      },
+      {
+        namn: "Nivå 20",
+        spikar: [
+          { x: 80, y: markY - 20, bredd: 45, hojd: 20 },
+          { x: 145, y: markY - 20, bredd: 45, hojd: 20 },
+          { x: 210, y: markY - 20, bredd: 45, hojd: 20 },
+          { x: 275, y: markY - 20, bredd: 45, hojd: 20 },
+          { x: 340, y: markY - 20, bredd: 45, hojd: 20 },
+          { x: 405, y: markY - 20, bredd: 45, hojd: 20 },
+          { x: 470, y: markY - 20, bredd: 45, hojd: 20 },
+          { x: 535, y: markY - 20, bredd: 45, hojd: 20 }
+        ],
+        portal: { x: 620, y: markY - 60, bredd: 35, hojd: 60 }
+      }
+    ];
+
+    document.addEventListener("keydown", function(event) {
+      tangenter[event.code] = true;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        hoppa();
+      }
+    });
+
+    document.addEventListener("keyup", function(event) {
+      tangenter[event.code] = false;
+    });
+
+    function hoppa() {
+      if (spelare.paMarken) {
+        spelare.yHastighet = -spelare.hoppStyrka;
+        spelare.paMarken = false;
+      }
+    }
+
+    function laddaNiva(nummer) {
+      aktuellNiva = nummer;
+
+      spelare.x = 50;
+      spelare.y = 300;
+      spelare.yHastighet = 0;
+      spelare.paMarken = false;
+
+      document.getElementById("nivaText").textContent = aktuellNiva + 1;
+      document.getElementById("meddelande").textContent = nivaer[aktuellNiva].namn;
+    }
+
+    function uppdatera() {
+      if (tangenter["KeyA"]) {
+        spelare.x -= spelare.hastighet;
+      }
+
+      if (tangenter["KeyD"]) {
+        spelare.x += spelare.hastighet;
+      }
+
+      spelare.yHastighet += gravitation;
+      spelare.y += spelare.yHastighet;
+
+      if (spelare.y + spelare.hojd >= markY) {
+        spelare.y = markY - spelare.hojd;
+        spelare.yHastighet = 0;
+        spelare.paMarken = true;
+      }
+
+      if (spelare.x < 0) {
+        spelare.x = 0;
+      }
+
+      if (spelare.x + spelare.bredd > canvas.width) {
+        spelare.x = canvas.width - spelare.bredd;
+      }
+
+      kollaSpikar();
+      kollaPortal();
+    }
+
+    function kolliderar(a, b) {
+      return (
+        a.x < b.x + b.bredd &&
+        a.x + a.bredd > b.x &&
+        a.y < b.y + b.hojd &&
+        a.y + a.hojd > b.y
+      );
+    }
+
+    function kollaSpikar() {
+      let spikar = nivaer[aktuellNiva].spikar;
+
+      for (let spik of spikar) {
+        if (kolliderar(spelare, spik)) {
+          dog();
+        }
+      }
+    }
+
+    function kollaPortal() {
+      let portal = nivaer[aktuellNiva].portal;
+
+      if (kolliderar(spelare, portal)) {
+        nastaNiva();
+      }
+    }
+
+    function dog() {
+      document.getElementById("meddelande").textContent = "Du dog på spikarna! Försök igen.";
+
+      spelare.x = 50;
+      spelare.y = 300;
+      spelare.yHastighet = 0;
+      spelare.paMarken = false;
+    }
+
+    function nastaNiva() {
+      if (aktuellNiva < nivaer.length - 1) {
+        laddaNiva(aktuellNiva + 1);
+      } else {
+        document.getElementById("meddelande").textContent = "Du klarade alla 20 nivåer! GG!";
+
+        spelare.x = 50;
+        spelare.y = 300;
+        spelare.yHastighet = 0;
+      }
+    }
+
+    function ritaMark() {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, markY, canvas.width, 5);
+    }
+
+    function ritaSpikar() {
+      ctx.fillStyle = "red";
+
+      let spikar = nivaer[aktuellNiva].spikar;
+
+      for (let spik of spikar) {
+        ctx.beginPath();
+        ctx.moveTo(spik.x, spik.y + spik.hojd);
+        ctx.lineTo(spik.x + spik.bredd / 2, spik.y);
+        ctx.lineTo(spik.x + spik.bredd, spik.y + spik.hojd);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    function ritaPortal() {
+      let portal = nivaer[aktuellNiva].portal;
+
+      ctx.fillStyle = "purple";
+      ctx.fillRect(portal.x, portal.y, portal.bredd, portal.hojd);
+
+      ctx.fillStyle = "cyan";
+      ctx.fillRect(portal.x + 8, portal.y + 8, portal.bredd - 16, portal.hojd - 16);
+    }
+
+    function ritaSpelare() {
+      ctx.fillStyle = "lime";
+      ctx.fillRect(spelare.x, spelare.y, spelare.bredd, spelare.hojd);
+    }
+
+    function rita() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ritaMark();
+      ritaSpikar();
+      ritaPortal();
+      ritaSpelare();
+    }
+
+    function spelLoop() {
+      uppdatera();
+      rita();
+      requestAnimationFrame(spelLoop);
+    }
+
+    laddaNiva(0);
+    spelLoop();
+  </script>
+
+</body>
+</html>
